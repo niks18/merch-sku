@@ -8,14 +8,27 @@ from rest_framework.exceptions import PermissionDenied, NotFound, ValidationErro
 from ..models.models import SKU, Note, SalesActivity, ReturnActivity, ContentScoreActivity
 from ..serializers.serializers import SKUSerializer, NoteSerializer, SalesActivitySerializer, ReturnActivitySerializer, ContentScoreActivitySerializer
 from ..utils.helpers import calculate_content_score, calculate_return_rate
+from django.db import models
 
 def update_sku_metrics(sku):
     """
     Update the metrics for a SKU based on its activities.
     """
-    sku_data = {'uuid': sku.uuid}
-    sku.content_score = calculate_content_score(sku_data)
-    sku.return_percentage = calculate_return_rate(sku_data)
+    # Calculate total sales
+    total_sales = SalesActivity.objects.filter(sku=sku).aggregate(total=models.Sum('quantity'))['total'] or 0
+    sku.sales = total_sales
+
+    # Calculate return percentage
+    total_returns = ReturnActivity.objects.filter(sku=sku).aggregate(total=models.Sum('quantity'))['total'] or 0
+    if total_sales > 0:
+        sku.return_percentage = round((total_returns / total_sales) * 100, 2)
+    else:
+        sku.return_percentage = 0.0
+
+    # Calculate content score
+    avg_score = ContentScoreActivity.objects.filter(sku=sku).aggregate(avg=models.Avg('score'))['avg']
+    sku.content_score = round(avg_score, 2) if avg_score is not None else 0.0
+
     sku.save()
 
 class SKUViewSet(viewsets.ModelViewSet):

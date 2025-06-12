@@ -50,12 +50,14 @@ function SKUDetail() {
 
   const fetchSKUDetails = async () => {
     try {
+      console.log('Fetching SKU details for:', uuid);
       const response = await axios.get(`http://localhost:8000/api/skus/${uuid}/`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
       });
+      console.log('SKU details response:', response.data);
       setSku(response.data);
       setLoading(false);
     } catch (err) {
@@ -137,7 +139,11 @@ function SKUDetail() {
         date: new Date().toISOString().split('T')[0],
       });
       setSalesForm({ quantity: '', date: '' });
-      fetchActivities(sku.uuid);
+      // Refresh both activities and SKU details
+      await Promise.all([
+        fetchActivities(sku.uuid),
+        fetchSKUDetails()
+      ]);
     } catch (err) {
       setActivityError('Failed to add sales activity.');
     }
@@ -153,7 +159,11 @@ function SKUDetail() {
         date: new Date().toISOString().split('T')[0],
       });
       setReturnForm({ quantity: '', date: '' });
-      fetchActivities(sku.uuid);
+      // Refresh both activities and SKU details
+      await Promise.all([
+        fetchActivities(sku.uuid),
+        fetchSKUDetails()
+      ]);
     } catch (err) {
       setActivityError('Failed to add return activity.');
     }
@@ -169,7 +179,11 @@ function SKUDetail() {
         date: new Date().toISOString().split('T')[0],
       });
       setContentScoreForm({ score: '', date: '' });
-      fetchActivities(sku.uuid);
+      // Refresh both activities and SKU details
+      await Promise.all([
+        fetchActivities(sku.uuid),
+        fetchSKUDetails()
+      ]);
     } catch (err) {
       setActivityError('Failed to add content score activity.');
     }
@@ -221,6 +235,17 @@ function SKUDetail() {
     },
   };
 
+  // Add periodic refresh of SKU details
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      if (uuid) {
+        fetchSKUDetails();
+      }
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [uuid]);
+
   if (loading) return <div className="loading">Loading SKU details...</div>;
   if (error) return (
     <div className="error">
@@ -237,9 +262,9 @@ function SKUDetail() {
         <h2>{sku.name}</h2>
         <div className="sku-info-grid">
           <div><strong>SKU UUID:</strong> {sku.uuid}</div>
-          <div><strong>Sales:</strong> {sku.sales}</div>
-          <div><strong>Return %:</strong> {sku.return_percentage.toFixed(2)}%</div>
-          <div><strong>Content Score:</strong> {sku.content_score.toFixed(2)}</div>
+          <div><strong>Sales:</strong> {sku.sales || 0}</div>
+          <div><strong>Return %:</strong> {Number(sku.return_percentage).toFixed(2)}%</div>
+          <div><strong>Content Score:</strong> {Number(sku.content_score).toFixed(2)}</div>
         </div>
         <div className="chart-section">
           <h3>Sales (Last 7 Days)</h3>
