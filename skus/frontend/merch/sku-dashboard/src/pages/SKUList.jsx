@@ -70,7 +70,13 @@ const styles = {
     border: '1px solid #e0e0e0',
     borderRadius: '8px',
     fontSize: '14px',
+    backgroundColor: '#fff',
+    color: '#222',
     transition: 'all 0.3s ease',
+    '::placeholder': {
+      color: '#888',
+      opacity: 1
+    },
     '&:focus': {
       outline: 'none',
       borderColor: '#3498db',
@@ -181,6 +187,13 @@ const styles = {
     borderRadius: '8px',
     marginBottom: '16px',
     fontSize: '14px',
+    backgroundColor: '#fff',
+    color: '#222',
+    boxSizing: 'border-box',
+    '::placeholder': {
+      color: '#888',
+      opacity: 1
+    },
     '&:focus': {
       outline: 'none',
       borderColor: '#3498db',
